@@ -43,7 +43,6 @@ class ProductController extends Controller
             'category' => 'required',
             'title' => 'required|unique:products',
             'price' => 'required|integer',
-            'stock' => 'required|integer',
             'desc' => 'required',
         ]);
 
@@ -132,7 +131,6 @@ class ProductController extends Controller
             'category' => 'required',
             'title' => 'required|' . $validatorCheck,
             'price' => 'required|integer',
-            'stock' => 'required|integer',
             'desc' => 'required',
         ]);
 
