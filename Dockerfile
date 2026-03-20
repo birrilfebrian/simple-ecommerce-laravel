@@ -16,6 +16,19 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 # Instal PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
+# Tambahkan libpq-dev untuk PostgreSQL
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libpq-dev \
+    zip \
+    unzip \
+    git \
+    curl
+
+# Instal PHP extensions (Tambahkan pdo_pgsql)
+RUN docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd
 # Aktifkan Apache Rewrite Module (Wajib buat Laravel)
 RUN a2enmod rewrite
 
@@ -35,3 +48,5 @@ RUN composer install --no-dev --optimize-autoloader
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
+
+CMD php artisan migrate --force && apache2-foreground
