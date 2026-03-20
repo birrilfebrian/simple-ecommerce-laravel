@@ -30,6 +30,16 @@
   }
 </style>
 @endsection
+@php
+$phone = preg_replace('/[^0-9]/', '', $order->phone);
+if (str_starts_with($phone, '0')) {
+$phone = '62' . substr($phone, 1);
+}else{
+$phone = '62' . $phone;
+}
+$message = "Halo kak {$order->name}, pemberitahuan untuk No Order: *{$order->order_code}*. Filenya sudah selesai diproses ya, silakan bisa dicek kembali di website SAMY. Terima kasih!";
+$waUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
+@endphp
 @section('content')
 <div class="card">
   <div class="card-body">
@@ -68,22 +78,35 @@
             <td>{{ $order->name }}</td>
           </tr>
           <tr>
-            <td><b>Phone</b></td>
-            <td>&nbsp; : &nbsp;</td>
-            <td>{{ $order->phone }}</td>
-          </tr>
-          <tr>
-            <td><b>Note</b></td>
-            <td>&nbsp; : &nbsp;</td>
-            <td>{{ $order->note }}</td>
+            <td style="vertical-align: middle;"><b>Phone</b></td>
+            <td style="vertical-align: middle;">&nbsp; : &nbsp;</td>
+            <td style="vertical-align: middle;">
+              <div class="d-inline-flex align-items-center">
+                <span>{{ $order->phone }}</span>
+
+                <a href="{{ $waUrl }}" target="_blank" class="btn btn-sm btn-success ms-2 px-3 py-1" style="border-radius: 20px; font-size: 0.75rem;">
+                  <i class="bi bi-whatsapp"></i> Hubungi Wa
+                </a>
+              </div>
+            </td>
           </tr>
         </table>
         <hr>
+        <div class="mt-4">
+          <h6 class="fw-bold"><i class="bi bi-sticky"></i> Instruksi Tambahan (Notes):</h6>
+          <div class="d-flex flex-wrap gap-2 mt-2">
+            @foreach(explode(', ', $order->note) as $item)
+            <span class="badge rounded-pill bg-primary px-3 py-2">
+              {{ $item }}
+            </span>
+            @endforeach
+          </div>
+        </div>
       </div>
       <div class="col-md-8 col-12">
         <h4>Order Detail</h4>
         <div class="table-responsive">
-          <table class="table table table-striped table-bordered">
+          <!-- <table class="table table table-striped table-bordered">
             <thead>
               <tr>
                 <td>No</td>
@@ -102,14 +125,11 @@
               </tr>
               @endforeach
             </tbody>
-          </table>
+          </table> -->
           @if($order->document_path || $order->payment_path || $order->amandement_path)
-          <div class="mt-4 p-3 rounded" style="background-color: #f8f9fa;">
+          <div class=" p-3 rounded" style="background-color: #f8f9fa;">
             <div class="row">
-
-              {{-- Kolom Kiri: Area Dokumen (Tugas & Amandemen) --}}
               <div class="col-md-6 mb-3 mb-md-0 border-end">
-                {{-- File Tugas Awal --}}
                 @if($order->document_path)
                 <div class="mb-3">
                   <strong class="text-primary">File Turnitin Awal:</strong>
@@ -119,8 +139,6 @@
                   </a>
                 </div>
                 @endif
-
-                {{-- File Amandemen/Revisi (Muncul jika ada data atau status Amandement) --}}
                 @if($order->amandement_path)
                 <div class="mt-3 p-2 border-top">
                   <strong class="text-danger">File Revisi (Amandement):</strong>
@@ -137,7 +155,6 @@
                 @endif
               </div>
 
-              {{-- Kolom Kanan: Bukti Pembayaran --}}
               @if($order->payment_path)
               <div class="col-md-6 ps-md-4">
                 <strong>Bukti Pembayaran:</strong>
@@ -155,6 +172,7 @@
           </div>
           @endif
         </div>
+
       </div>
     </div>
   </div>

@@ -136,7 +136,30 @@ class ClientController extends Controller
             return redirect()->route('clientCheckout')->withErrors($validator)->withInput();
         }
 
-        $noteString = $request->has('notes') ? implode(', ', $request->notes) : null;
+        // Ambil array notes asli
+        $notes = $request->notes ?? [];
+
+        // Jika ada Small Matches di dalam array, kita modifikasi teksnya
+        if (in_array('Small Matches', $notes)) {
+            $detailSmallMatch = [];
+
+            if ($request->filled('small_match_word')) {
+                $detailSmallMatch[] = $request->small_match_word . " Words";
+            }
+
+            if ($request->filled('small_match_percent')) {
+                $detailSmallMatch[] = $request->small_match_percent . "%";
+            }
+
+            // Jika ada isinya, kita timpa tulisan "Small Matches" dengan detailnya
+            if (!empty($detailSmallMatch)) {
+                $index = array_search('Small Matches', $notes);
+                $notes[$index] = "Small Matches (" . implode(' & ', $detailSmallMatch) . ")";
+            }
+        }
+
+        // Gabungkan semuanya jadi satu string untuk database
+        $noteString = !empty($notes) ? implode(', ', $notes) : null;
 
         $documentPath = null;
         if ($request->hasFile('document')) {

@@ -61,6 +61,42 @@
                 </label>
             </div>
 
+            <div class="form-check">
+                <input class="form-check-input @error('notes') is-invalid @enderror" type="checkbox" name="notes[]" value="Abaikan Teks Kutipan" id="note2" {{ in_array('Abaikan Teks Kutipan', old('notes', [])) ? 'checked' : '' }}>
+                <label class="form-check-label" for="note2">
+                    Abaikan Catatan Kaki
+                </label>
+            </div>
+
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="notes[]" value="Small Matches" id="smallMatches" {{ in_array('Small Matches', old('notes', [])) ? 'checked' : '' }}>
+                <label class="form-check-label" for="smallMatches">
+                    Abaikan Sumber Yang Kurang Dari - Small Matches
+                </label>
+            </div>
+
+            <div id="smallMatchesOptions" style="display: {{ in_array('Small Matches', old('notes', [])) ? 'block' : 'none' }}; margin-left: 25px; margin-top: 10px;">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <label style="font-size: 0.85rem;">Jumlah Kata (Words)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="small_match_word" class="form-control" placeholder="Contoh: 10" value="{{ old('small_match_word') }}">
+                            <span class="input-group-text">Words</span>
+                        </div>
+                        <small class="text-muted">Tampilan Baru & Lama</small>
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <label style="font-size: 0.85rem;">Persen (%)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="small_match_percent" class="form-control" placeholder="Contoh: 1" value="{{ old('small_match_percent') }}">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="text-muted">Hanya Tampilan Lama</small>
+                    </div>
+                </div>
+            </div>
+
             @error('notes')
             <span class="text-danger" style="font-size: 80%; mt-1" role="alert">
                 <strong>{{ $message }}</strong>
@@ -93,5 +129,21 @@
             $text.css('height', $text[0].scrollHeight + 'px');
         }
     }
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('smallMatches');
+        const options = document.getElementById('smallMatchesOptions');
+
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                options.style.display = 'block';
+            } else {
+                options.style.display = 'none';
+                // Opsional: Kosongkan input kalau checkbox dimatikan
+                options.querySelectorAll('input').forEach(input => input.value = '');
+            }
+        });
+    });
 </script>
 @endpush
