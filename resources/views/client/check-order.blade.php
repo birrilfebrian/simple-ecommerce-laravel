@@ -1,8 +1,9 @@
-<x-template.layout title="{{ $title }}" >  
-  <x-organisms.navbar :path="$shop->path"/>
+<x-template.layout title="{{ $title }}">
+  <x-organisms.navbar :path="$shop->path" />
   <x-molecules.check-order.form />
   @if(!empty($order))
-    <x-molecules.check-order.data :order="$order" :orderDetail="$orderDetail" />
+  <x-molecules.check-order.data :order="$order" :orderDetail="$orderDetail" :nomorAdmin="$nomorAdmin"
+    :pesanWA="$pesanWA" />
   @endif
-  <x-organisms.footer :shop="$shop"/>
+  <x-organisms.footer :shop=" $shop" />
 </x-template.layout>

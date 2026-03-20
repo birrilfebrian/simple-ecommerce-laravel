@@ -7,14 +7,14 @@
 @endsection
 @section('content')
 <div class="card">
-  <div class="card-body">
+    <div class="card-body">
         <table class="table table-striped" id="table1">
             <thead>
                 <tr>
                     <th>No</th>
                     <th>Title</th>
                     <th>Category</th>
-                    <th>Stock</th>
+                    <th>Price</th>
                     <th width="20%">Action</th>
                 </tr>
             </thead>
@@ -26,21 +26,21 @@
                     <td>
                         {!! str_replace('-', ' ', ucwords($row->category->name)) !!}
                     </td>
-                    <td>{{ $row->stock }}</td>
+                    <td>{{ $row->price }}</td>
                     <td>
                         <a href="{{ route('productEdit', $row->title ) }}"><span class="btn btn-sm btn-outline-primary">Detail</span></a>
                     </td>
                 </tr>
                 @endforeach
-                <tbody>
+            <tbody>
         </table>
-  </div>
+    </div>
 </div>
 @endsection
 @section('js')
 <script src="{{ asset('assets/vendors/simple-datatables/simple-datatables.js') }}"></script>
 <script>
-  let table1 = document.querySelector('#table1');
-  let dataTable = new simpleDatatables.DataTable(table1);
+    let table1 = document.querySelector('#table1');
+    let dataTable = new simpleDatatables.DataTable(table1);
 </script>
 @endsection

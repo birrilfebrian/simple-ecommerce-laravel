@@ -12,7 +12,8 @@ use File;
 
 class ProductController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         $data = [
             'products' => Product::all()->sortByDesc('id'),
             'title' => 'Products'
@@ -21,20 +22,23 @@ class ProductController extends Controller
         return view('admin.product.index', $data);
     }
 
-    public function create(){
+    public function create()
+    {
         return view('admin.product.create', ['title' => 'Add Product']);
     }
 
-    public function check(Request $request){
+    public function check(Request $request)
+    {
         $name = Product::where('title', $request->title)->exists();
-        if($name){
+        if ($name) {
             return response()->json(['status' => 'success', 'messages' => 'not available', 'code' => 200], 200);
-        }else{
+        } else {
             return response()->json(['status' => 'success', 'messages' => 'available', 'code' => 201], 201);
         }
     }
 
-    public function save(Request $request){
+    public function save(Request $request)
+    {
         $validator = Validator($request->all(), [
             'category' => 'required',
             'title' => 'required|unique:products',
@@ -43,14 +47,14 @@ class ProductController extends Controller
             'desc' => 'required',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return redirect()->route('productCreate')->withErrors($validator)->withInput();
-        }else{
+        } else {
             Product::create([
                 'category_id' => $request->category,
                 'title' => $request->title,
                 'price' => $request->price,
-                'stock' => $request->stock,
+                'stock' => 100,
                 'desc' => $request->desc,
             ]);
 
@@ -58,12 +62,13 @@ class ProductController extends Controller
         }
     }
 
-    public function addImages($product){
+    public function addImages($product)
+    {
 
         $productData = Product::where('title', $product)->first();
 
         $data = [
-            'title' => 'Add Images - '. str_replace('-', ' ', $product),
+            'title' => 'Add Images - ' . str_replace('-', ' ', $product),
             'product' => $productData
         ];
 
@@ -71,12 +76,14 @@ class ProductController extends Controller
     }
 
 
-    public function getImages(Request $request){
+    public function getImages(Request $request)
+    {
         $data = ProductImage::where('product_id', $request->id_products)->orderByDesc('id')->get();
         return response()->json($data);
     }
 
-    public function addImagesSave(Request $request){
+    public function addImagesSave(Request $request)
+    {
         $image = $request->file('file');
         $imageName = $image->getClientOriginalName();
         $image->move(public_path('shop/products'), $imageName);
@@ -89,51 +96,54 @@ class ProductController extends Controller
         return response()->json(['status' => 'success', 'code' => 200], 200);
     }
 
-    public function deleteImages(Request $request){
+    public function deleteImages(Request $request)
+    {
         $filename = $request->get('filename');
         ProductImage::where('path', $filename)->delete();
-        $paths = public_path().'/shop/products/'. $filename;
-        if(file_exists($paths)){
+        $paths = public_path() . '/shop/products/' . $filename;
+        if (file_exists($paths)) {
             unlink($paths);
         }
         return response()->json(['status' => 'success', 'code' => 200], 200);
     }
 
-    public function edit($product){
+    public function edit($product)
+    {
         $productData = Product::where('title', $product)->first();
 
         $data = [
             'product' => $productData,
-            'title' => 'Edit product '. str_replace('-', ' ', $product)
+            'title' => 'Edit product ' . str_replace('-', ' ', $product)
         ];
 
-        
+
         return view('admin.product.edit', $data);
     }
 
-    public function editSave(Request $request, $product, $id){
+    public function editSave(Request $request, $product, $id)
+    {
 
         $validatorCheck = '';
-        if($product != $request->title){
+        if ($product != $request->title) {
             $validatorCheck = 'unique:products';
         }
 
         $validator = Validator($request->all(), [
             'category' => 'required',
-            'title' => 'required|'.$validatorCheck,
+            'title' => 'required|' . $validatorCheck,
             'price' => 'required|integer',
             'stock' => 'required|integer',
             'desc' => 'required',
         ]);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return redirect()->route('productEdit', ['product' => $product, 'id' => $id])->withErrors($validator)->withInput();
-        }else{
+        } else {
             Product::where('id', $id)->update([
                 'category_id' => $request->category,
                 'title' => $request->title,
                 'price' => $request->price,
-                'stock' => $request->stock,
+                'stock' => 100,
                 'desc' => $request->desc,
             ]);
 
@@ -141,13 +151,14 @@ class ProductController extends Controller
         }
     }
 
-    public function delete($id){
+    public function delete($id)
+    {
         $product = Product::where('id', $id)->first();
 
         $dataImage = [];
 
-        foreach($product->productImage as $i => $item){
-            array_push($dataImage, public_path().'/shop/products/'.$item->path);
+        foreach ($product->productImage as $i => $item) {
+            array_push($dataImage, public_path() . '/shop/products/' . $item->path);
         }
 
         File::delete($dataImage);

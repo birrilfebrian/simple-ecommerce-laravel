@@ -19,10 +19,13 @@ return new class extends Migration
             $table->string('order_code');
             $table->string('name');
             $table->bigInteger('phone');
-            $table->string('address');
+            $table->string('document_path');
+            $table->string('payment_path');
             $table->text('note')->nullable();
             $table->bigInteger('total');
             $table->integer('status');
+            $table->string('amandement_path')->nullable();
+            $table->string('turnitin_result')->nullable();
 
             $table->foreign('shop_id')->references('id')->on('shops')->onUpdate('cascade')->onDelete('cascade');
 

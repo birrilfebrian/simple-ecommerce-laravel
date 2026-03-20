@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['shop_id', 'order_code', 'name', 'phone', 'address', 'note', 'total', 'status'];
+    protected $fillable = ['shop_id', 'order_code', 'name', 'phone', 'address', 'note', 'total', 'status', 'document_path', 'payment_path', 'amandement_path', 'turnitin_result'];
 
-    public function shop(){
+    public function shop()
+    {
         return $this->belongsTo(Shop::class);
     }
 

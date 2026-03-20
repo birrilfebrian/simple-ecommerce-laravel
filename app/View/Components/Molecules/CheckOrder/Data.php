@@ -12,12 +12,14 @@ class Data extends Component
      * @return void
      */
 
-     public $order, $orderDetail;
+    public $order, $orderDetail, $pesanWA, $nomorAdmin;
 
-    public function __construct($order, $orderDetail)
+    public function __construct($order, $orderDetail, $pesanWA, $nomorAdmin)
     {
         $this->order = $order;
         $this->orderDetail = $orderDetail;
+        $this->nomorAdmin = $nomorAdmin;
+        $this->pesanWA = $pesanWA;
     }
 
     /**

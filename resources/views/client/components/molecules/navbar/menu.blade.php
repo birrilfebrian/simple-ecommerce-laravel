@@ -5,9 +5,9 @@
   <li class="nav-item">
     <a href="{{ route('clientProducts') }}" class="nav-link">Products</a>
   </li>
-  <li class="nav-item">
+  <!-- <li class="nav-item">
     <a href="{{ route('clientCategory') }}" class="nav-link">Category</a>
-  </li>
+  </li> -->
   <li class="nav-item">
     <a href="{{ route('clientAbout') }}" class="nav-link">About</a>
   </li>
