@@ -40,6 +40,7 @@ Route::controller(ClientController::class)->group(function () {
     Route::match(['get', 'post'], '/check-order-status', [ClientController::class, 'checkOrderStatus'])->name('clientCheckOrderStatus');
     Route::get('/about', 'about')->name('clientAbout');
     Route::post('/upload-amandement/{order_code}', 'uploadAmandement')->name('clientUploadAmandement');
+    Route::post('/upload-temporary', 'uploadTemporary')->name('upload.temporary');
 });
 
 Route::controller(CartController::class)->group(function () {

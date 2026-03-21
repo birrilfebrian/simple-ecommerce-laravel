@@ -44,8 +44,12 @@ COPY . /var/www/html
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN composer install --no-dev --optimize-autoloader
 
-# Berikan izin ke folder storage
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/public
+# Jalankan storage link saat build
+RUN php artisan storage:link
+
+# Pastikan folder storage dan public punya izin tulis untuk user www-data
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/public
+RUN chmod -R 775 /var/www/html/storage /var/www/html/public
 
 EXPOSE 80
 

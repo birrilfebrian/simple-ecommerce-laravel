@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Client;
 
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Category;
@@ -43,6 +44,14 @@ class ClientController extends Controller
         return view('client.products', $data);
     }
 
+    /*************  ✨ Windsurf Command ⭐  *************/
+    /**
+     * Search products by name
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    /*******  08f56397-a699-467d-95d0-c81405254457  *******/
     public function searchProduct(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -121,54 +130,45 @@ class ClientController extends Controller
 
     public function checkoutSave(Request $request)
     {
-
-
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'phone' => 'required',
-            'document' => 'required|file|mimes:pdf,doc,docx|max:30720',
-            'payment' => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'document' => 'required|string', // Menerima path string dari AJAX
+            'payment' => 'required|string',  // Menerima path string dari AJAX
             'notes' => 'nullable|array',
             'notes.*' => 'string'
         ]);
 
         if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
             return redirect()->route('clientCheckout')->withErrors($validator)->withInput();
         }
-
-        // Ambil array notes asli
         $notes = $request->notes ?? [];
-
-        // Jika ada Small Matches di dalam array, kita modifikasi teksnya
         if (in_array('Small Matches', $notes)) {
             $detailSmallMatch = [];
+            if ($request->filled('small_match_word')) $detailSmallMatch[] = $request->small_match_word . " Words";
+            if ($request->filled('small_match_percent')) $detailSmallMatch[] = $request->small_match_percent . "%";
 
-            if ($request->filled('small_match_word')) {
-                $detailSmallMatch[] = $request->small_match_word . " Words";
-            }
-
-            if ($request->filled('small_match_percent')) {
-                $detailSmallMatch[] = $request->small_match_percent . "%";
-            }
-
-            // Jika ada isinya, kita timpa tulisan "Small Matches" dengan detailnya
             if (!empty($detailSmallMatch)) {
                 $index = array_search('Small Matches', $notes);
                 $notes[$index] = "Small Matches (" . implode(' & ', $detailSmallMatch) . ")";
             }
         }
-
-        // Gabungkan semuanya jadi satu string untuk database
         $noteString = !empty($notes) ? implode(', ', $notes) : null;
 
-        $documentPath = null;
-        if ($request->hasFile('document')) {
-            $documentPath = $request->file('document')->store('documents', 'public');
-        }
+        $tempDocPath = $request->document; // Contoh: "temp/abc.pdf"
+        $tempPayPath = $request->payment;  // Contoh: "temp/xyz.jpg"
 
-        $paymentPath = null;
-        if ($request->hasFile('payment')) {
-            $paymentPath = $request->file('payment')->store('payments', 'public');
+        $finalDocPath = str_replace('temp/', 'documents/', $tempDocPath);
+        $finalPayPath = str_replace('temp/', 'payments/', $tempPayPath);
+
+        if (Storage::disk('public')->exists($tempDocPath)) {
+            Storage::disk('public')->move($tempDocPath, $finalDocPath);
+        }
+        if (Storage::disk('public')->exists($tempPayPath)) {
+            Storage::disk('public')->move($tempPayPath, $finalPayPath);
         }
 
         $order_code = Str::random(3) . '-' . date('Ymd');
@@ -176,10 +176,8 @@ class ClientController extends Controller
         if (session('cart')) {
             $total = 0;
             $data = [];
-
             foreach ((array) session('cart') as $id => $details) {
                 $total += $details['price'] * $details['quantity'];
-
                 $data[] = [
                     'order_code' => $order_code,
                     'title' => $details['title'],
@@ -187,26 +185,37 @@ class ClientController extends Controller
                     'quantity' => $details['quantity'],
                 ];
             }
+
+            // Simpan ke Database menggunakan path FINAL
             Order::create([
                 'shop_id' => Shop::first()->id,
                 'order_code' => $order_code,
                 'name' => $request->name,
                 'phone' => $request->phone,
                 'note' => $noteString,
-                'document_path' => $documentPath,
-                'payment_path' => $paymentPath,
+                'document_path' => $finalDocPath, // Sudah mengarah ke documents/
+                'payment_path' => $finalPayPath,  // Sudah mengarah ke payments/
                 'total' => $total,
                 'status' => 0
             ]);
 
             OrderDetail::insert($data);
-
             session()->forget('cart');
 
             return redirect()->route('clientOrderCode', $order_code);
         }
 
         return redirect()->route('clientCheckout')->with('error', 'Keranjang belanja Anda kosong.');
+    }
+
+    public function uploadTemporary(Request $request)
+    {
+        if ($request->hasFile('file')) {
+            // Simpan ke folder temporary
+            $path = $request->file('file')->store('temp', 'public');
+            return response()->json(['path' => $path]);
+        }
+        return response()->json(['error' => 'No file'], 400);
     }
 
     public function uploadAmandement(Request $request, $order_code)
