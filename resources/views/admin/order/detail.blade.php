@@ -155,19 +155,6 @@ $waUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
                 @endif
               </div>
 
-              @if($order->payment_path)
-              <div class="col-md-6 ps-md-4">
-                <strong>Bukti Pembayaran:</strong>
-                <br>
-                <img src="{{ asset('storage/' . $order->payment_path) }}"
-                  class="img-fluid rounded border mt-2 shadow-sm zoom-me"
-                  style="max-height: 200px; cursor: zoom-in;">
-                <small class="d-block text-muted mt-1">Klik untuk memperbesar</small>
-              </div>
-              @endif
-
-
-
             </div>
           </div>
           @endif

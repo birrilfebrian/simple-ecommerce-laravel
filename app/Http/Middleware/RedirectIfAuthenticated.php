@@ -23,7 +23,14 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                $user = Auth::user();
+                // Jika dia Admin dan mencoba akses Login/Register, lempar ke Admin
+                if ($user->level === 'admin') {
+                    return redirect('/home');
+                }
+
+                // Jika User biasa, biarkan dia ke '/', TAPI pastikan '/' tidak nendang dia balik
+                return redirect('/');
             }
         }
 

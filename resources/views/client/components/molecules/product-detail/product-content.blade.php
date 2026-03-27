@@ -198,10 +198,23 @@
         // Jika sukses, langsung arahkan ke halaman checkout
         // 
       },
-      error: function() {
+      error: function(data) {
         // Jika error jaringan dll, kembalikan tombol ke semula
-        btn.prop('disabled', false).text('Checkout');
-        alert("Terjadi kesalahan sistem, silakan coba lagi.");
+        if (data.status == 401) {
+          Toastify({
+            text: "Silahkan login terlebih dahulu",
+            duration: 3000,
+            close: true,
+            gravity: "top",
+            position: "right",
+            backgroundColor: "#f3616d",
+          }).showToast();
+          btn.prop('disabled', false).text('Checkout');
+        } else {
+
+          alert("Terjadi kesalahan sistem, silakan coba lagi.");
+        }
+
       }
     });
   });

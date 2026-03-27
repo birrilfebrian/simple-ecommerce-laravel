@@ -69,6 +69,13 @@
                             </a>
                         </li>
 
+                        <li class="sidebar-item {{ request()->routeIs('adminTopupIndex') || request()->routeIs('adminTopupIndex') ? 'active' : '' }}">
+                            <a href="{{route('adminTopupIndex')}}" class='sidebar-link'>
+                                <i class="bi bi-bag"></i>
+                                <span>Top Up</span>
+                            </a>
+                        </li>
+
                         <li class="sidebar-item {{ request()->routeIs('shopDetail') ? 'active' : '' }}">
                             <a href="{{route('shopDetail')}}" class='sidebar-link'>
                                 <i class="bi bi-shop"></i>

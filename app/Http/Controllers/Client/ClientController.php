@@ -18,9 +18,9 @@ class ClientController extends Controller
     public function index()
     {
 
-        if (!Shop::exists()) {
-            return redirect()->route('register');
-        }
+        // if (!Shop::exists()) {
+        //     return redirect()->route('register');
+        // }
 
         $data = [
             'shop' => Shop::first(),
@@ -130,11 +130,18 @@ class ClientController extends Controller
 
     public function checkoutSave(Request $request)
     {
+        // 1. Pastikan User Login
+        if (!auth()->check()) {
+            return response()->json(['error' => 'Silakan login terlebih dahulu'], 401);
+        }
+
+        $user = auth()->user();
+
+        // 2. Validasi (Hapus 'payment' karena bayar pakai saldo)
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'phone' => 'required',
-            'document' => 'required|string', // Menerima path string dari AJAX
-            'payment' => 'required|string',  // Menerima path string dari AJAX
+            'document' => 'required|string', // Path dari temp upload
             'notes' => 'nullable|array',
             'notes.*' => 'string'
         ]);
@@ -143,14 +150,22 @@ class ClientController extends Controller
             if ($request->ajax()) {
                 return response()->json(['errors' => $validator->errors()], 422);
             }
-            return redirect()->route('clientCheckout')->withErrors($validator)->withInput();
+            return redirect()->back()->withErrors($validator)->withInput();
         }
+
+        // 3. Cek Kecukupan Kredit (Misal: 1 file = 1 credit)
+        $cart = session('cart');
+        $totalCredits = reset($cart)['credit']; // Sesuaikan jika dalam satu order bisa banyak file
+        if ($user->credits < $totalCredits) {
+            return response()->json(['error' => 'Saldo Kredit tidak cukup. Silakan Top-up.'], 402);
+        }
+
+        // 4. Proses Note (Tetap sama)
         $notes = $request->notes ?? [];
         if (in_array('Small Matches', $notes)) {
             $detailSmallMatch = [];
             if ($request->filled('small_match_word')) $detailSmallMatch[] = $request->small_match_word . " Words";
             if ($request->filled('small_match_percent')) $detailSmallMatch[] = $request->small_match_percent . "%";
-
             if (!empty($detailSmallMatch)) {
                 $index = array_search('Small Matches', $notes);
                 $notes[$index] = "Small Matches (" . implode(' & ', $detailSmallMatch) . ")";
@@ -158,54 +173,58 @@ class ClientController extends Controller
         }
         $noteString = !empty($notes) ? implode(', ', $notes) : null;
 
-        $tempDocPath = $request->document; // Contoh: "temp/abc.pdf"
-        $tempPayPath = $request->payment;  // Contoh: "temp/xyz.jpg"
-
+        // 5. Pindahkan File dari Temp ke Folder Permanen
+        $tempDocPath = $request->document;
         $finalDocPath = str_replace('temp/', 'documents/', $tempDocPath);
-        $finalPayPath = str_replace('temp/', 'payments/', $tempPayPath);
 
         if (Storage::disk('public')->exists($tempDocPath)) {
             Storage::disk('public')->move($tempDocPath, $finalDocPath);
         }
-        if (Storage::disk('public')->exists($tempPayPath)) {
-            Storage::disk('public')->move($tempPayPath, $finalPayPath);
-        }
 
         $order_code = Str::random(3) . '-' . date('Ymd');
 
-        if (session('cart')) {
-            $total = 0;
-            $data = [];
-            foreach ((array) session('cart') as $id => $details) {
-                $total += $details['price'] * $details['quantity'];
-                $data[] = [
+        // 6. Jalankan Transaksi (Potong Saldo & Simpan Order)
+        try {
+            DB::transaction(function () use ($user, $totalFiles, $order_code, $request, $noteString, $finalDocPath) {
+                // Potong Saldo User
+                $user->decrement('credits', $totalFiles);
+
+                // Simpan Order
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'shop_id' => Shop::first()->id,
                     'order_code' => $order_code,
-                    'title' => $details['title'],
-                    'price' => $details['price'],
-                    'quantity' => $details['quantity'],
-                ];
-            }
+                    'name' => $request->name,
+                    'phone' => $request->phone,
+                    'note' => $noteString,
+                    'document_path' => $finalDocPath,
+                    'payment_path' => 'PAID_WITH_CREDIT', // Tandai dibayar pakai kredit
+                    'total' => 0, // Nilai uang 0 karena pakai kredit
+                    'status' => 1 // Langsung Sukses/Paid
+                ]);
 
-            // Simpan ke Database menggunakan path FINAL
-            Order::create([
-                'shop_id' => Shop::first()->id,
-                'order_code' => $order_code,
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'note' => $noteString,
-                'document_path' => $finalDocPath, // Sudah mengarah ke documents/
-                'payment_path' => $finalPayPath,  // Sudah mengarah ke payments/
-                'total' => $total,
-                'status' => 0
-            ]);
+                // Jika ada detail item di cart
+                if (session('cart')) {
+                    foreach ((array) session('cart') as $id => $details) {
+                        OrderDetail::create([
+                            'order_code' => $order_code,
+                            'title' => $details['title'],
+                            'price' => $details['price'],
+                            'quantity' => $details['quantity'],
+                        ]);
+                    }
+                }
+            });
 
-            OrderDetail::insert($data);
             session()->forget('cart');
 
-            return redirect()->route('clientOrderCode', $order_code);
+            return response()->json([
+                'status' => 'success',
+                'redirect_url' => route('clientOrderCode', $order_code)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Gagal memproses pesanan: ' . $e->getMessage()], 500);
         }
-
-        return redirect()->route('clientCheckout')->with('error', 'Keranjang belanja Anda kosong.');
     }
 
     public function uploadTemporary(Request $request)

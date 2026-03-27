@@ -1,22 +1,19 @@
 <?php
 
-namespace App\View\Components\Organisms;
+namespace App\View\Components\Organisms\Payment;
 
 use Illuminate\View\Component;
 
-class Navbar extends Component
+class PackageList extends Component
 {
     /**
      * Create a new component instance.
      *
      * @return void
      */
-
-    public  $path;
-
-    public function __construct($path)
+    public function __construct()
     {
-        $this->path = $path;
+        //
     }
 
     /**
@@ -26,7 +23,6 @@ class Navbar extends Component
      */
     public function render()
     {
-        $credits = auth()->check() ? auth()->user()->credits : 0;
-        return view('client.components.organisms.navbar');
+        return view('client.components.organisms.package-list');
     }
 }

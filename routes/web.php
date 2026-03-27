@@ -5,8 +5,12 @@ use App\Http\Controllers\Admin\ShopController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\TopupController;
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\CartController;
+use App\Http\Controllers\Client\PaymentController;
+
+use App\Models\Topup;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,32 +32,43 @@ Route::controller(ClientController::class)->group(function () {
     Route::get('/category', 'category')->name('clientCategory');
     Route::get('/category/{category}', 'categoryProducts')->name('clientCategoryProducts');
     Route::get('/product/{product}', 'productDetail')->name('clientProductDetail');
-    Route::get('/product/{product}', 'productDetail')->name('clientProductDetail');
-    Route::get('/carts', 'carts')->name('clientCarts');
-    Route::post('/add-to-cart', 'addToCart')->name('clientAddToCart');
-    Route::post('/update-cart', 'updateCart')->name('clientUpdateCart');
-    Route::post('/delete-cart', 'deleteCart')->name('clientDeleteCart');
-    Route::get('/checkout', 'checkout')->name('clientCheckout');
-    Route::post('/checkout-save', 'checkoutSave')->name('clientCheckoutSave');
-    Route::get('/success/{order_code}', 'successOrder')->name('clientOrderCode');
-    Route::get('/check-order', 'checkOrder')->name('clientCheckOrder');
-    Route::match(['get', 'post'], '/check-order-status', [ClientController::class, 'checkOrderStatus'])->name('clientCheckOrderStatus');
     Route::get('/about', 'about')->name('clientAbout');
-    Route::post('/upload-amandement/{order_code}', 'uploadAmandement')->name('clientUploadAmandement');
-    Route::post('/upload-temporary', 'uploadTemporary')->name('upload.temporary');
 });
 
-Route::controller(CartController::class)->group(function () {
-    Route::get('/carts', 'carts')->name('clientCarts');
-    Route::post('/add-to-cart', 'addToCart')->name('clientAddToCart');
-    Route::post('/update-cart', 'updateCart')->name('clientUpdateCart');
-    Route::post('/delete-cart', 'deleteCart')->name('clientDeleteCart');
-});
+
 
 Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::middleware(['auth'])->group(function () {
+
+    Route::controller(CartController::class)->group(function () {
+        Route::get('/carts', 'carts')->name('clientCarts');
+        Route::post('/add-to-cart', 'addToCart')->name('clientAddToCart');
+        Route::post('/update-cart', 'updateCart')->name('clientUpdateCart');
+        Route::post('/delete-cart', 'deleteCart')->name('clientDeleteCart');
+    });
+
+
+    Route::controller(ClientController::class)->group(function () {
+        Route::match(['get', 'post'], '/check-order-status', [ClientController::class, 'checkOrderStatus'])->name('clientCheckOrderStatus');
+        Route::get('/checkout', 'checkout')->name('clientCheckout');
+        Route::post('/checkout-save', 'checkoutSave')->name('clientCheckoutSave');
+        Route::get('/check-order', 'checkOrder')->name('clientCheckOrder');
+        Route::get('/success/{order_code}', 'successOrder')->name('clientOrderCode');
+        Route::post('/upload-amandement/{order_code}', 'uploadAmandement')->name('clientUploadAmandement');
+        Route::post('/upload-temporary', 'uploadTemporary')->name('upload.temporary');
+    });
+
+    Route::controller(PaymentController::class)->group(function () {
+        Route::get('/topup', 'index')->name('topup.index');          // Halaman pilih paket credit
+        Route::post('/topup/store', 'store')->name('topup.store');    // Proses simpan permintaan topup
+        Route::get('/topup/history', 'history')->name('topup.history'); // Riwayat topup user
+        Route::get('/topup/pay/{reference_code}', 'pay')->name('topup.pay'); // Halaman instruksi bayar & upload bukti
+        Route::post('/topup/upload-proof', 'uploadProof')->name('topup.uploadProof'); // Proses upload bukti transfer
+    });
+});
+
+Route::middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     // Shop
     Route::controller(ShopController::class)->group(function () {
         Route::post('/shop/create', 'create')->name('shopCreate');
@@ -92,5 +107,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/order/{order_code}', 'detail')->name('orderDetail');
         Route::post('/admin/order/update-status/{order_code}', 'updateStatus')->name('orderUpdateStatus');
         Route::get('/admin/order/delete/{order_code}', 'delete')->name('orderDelete');
+    });
+
+    //Topups
+    Route::controller(TopupController::class)->group(function () {
+        Route::get('/admin/topups', 'index')->name('adminTopupIndex'); // List topup masuk
+        Route::get('/admin/topup/{ref_code}', 'detail')->name('adminTopupDetail');
+        Route::post('/admin/topup/{ref_code}/approve', 'approveTopup')->name('adminTopupApprove'); // Approve saldo
+        Route::post('/admin/topup/{ref_code}/reject', 'rejectTopup')->name('adminTopupReject');   // Tolak topup
     });
 });

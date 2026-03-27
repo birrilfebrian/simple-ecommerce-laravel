@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
@@ -36,5 +37,17 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+    // Pastikan ini diimpor di atas
+
+    // ... di dalam class LoginController ...
+
+    protected function authenticated(Request $request, $user)
+    {
+
+        if ($user->level == 'admin') {
+            return redirect()->route('home'); // Ganti ke nama route admin kamu
+        }
+        return redirect('/'); // User biasa dilempar ke landing page
     }
 }
