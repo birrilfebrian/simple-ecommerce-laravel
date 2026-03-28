@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use Illuminate\Support\Facades\DB;
 use Validator;
 use Str;
 
@@ -155,7 +156,8 @@ class ClientController extends Controller
 
         // 3. Cek Kecukupan Kredit (Misal: 1 file = 1 credit)
         $cart = session('cart');
-        $totalCredits = reset($cart)['credit']; // Sesuaikan jika dalam satu order bisa banyak file
+        // var_dump($cart);
+        $totalCredits = reset($cart)['price']; // Sesuaikan jika dalam satu order bisa banyak file
         if ($user->credits < $totalCredits) {
             return response()->json(['error' => 'Saldo Kredit tidak cukup. Silakan Top-up.'], 402);
         }
@@ -173,7 +175,6 @@ class ClientController extends Controller
         }
         $noteString = !empty($notes) ? implode(', ', $notes) : null;
 
-        // 5. Pindahkan File dari Temp ke Folder Permanen
         $tempDocPath = $request->document;
         $finalDocPath = str_replace('temp/', 'documents/', $tempDocPath);
 
@@ -185,11 +186,9 @@ class ClientController extends Controller
 
         // 6. Jalankan Transaksi (Potong Saldo & Simpan Order)
         try {
-            DB::transaction(function () use ($user, $totalFiles, $order_code, $request, $noteString, $finalDocPath) {
-                // Potong Saldo User
-                $user->decrement('credits', $totalFiles);
-
-                // Simpan Order
+            DB::transaction(function () use ($user, $totalCredits, $order_code, $request, $noteString, $finalDocPath) {
+                $user->decrement('credits', $totalCredits);
+                // var_dump($user);
                 $order = Order::create([
                     'user_id' => $user->id,
                     'shop_id' => Shop::first()->id,
@@ -198,9 +197,9 @@ class ClientController extends Controller
                     'phone' => $request->phone,
                     'note' => $noteString,
                     'document_path' => $finalDocPath,
-                    'payment_path' => 'PAID_WITH_CREDIT', // Tandai dibayar pakai kredit
-                    'total' => 0, // Nilai uang 0 karena pakai kredit
-                    'status' => 1 // Langsung Sukses/Paid
+                    'payment_path' => 'PAID_WITH_CREDIT',
+                    'total' => 0,
+                    'status' => 1
                 ]);
 
                 // Jika ada detail item di cart
